@@ -112,11 +112,10 @@ ansible-playbook provisioning.yml -i hosts -K
 
 O Ansible irá:
 
-conectar no servidor
+- conectar no servidor
+- instalar tudo automaticamente
+- configurar o WordPress
 
-instalar tudo automaticamente
-
-configurar o WordPress
 <br/>
 <br/>
 
