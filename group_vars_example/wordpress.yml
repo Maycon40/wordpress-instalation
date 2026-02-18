@@ -1,0 +1,15 @@
+---
+wp_db_name: "wordpress_db"
+wp_db_user: "wordpress_user"
+wp_db_pass: "your_password"
+wp_dir: "/srv/www/wordpress"
+
+# Obter as chaves de segurança abaixo no site: https://api.wordpress.org/secret-key/1.1/salt/
+auth_key: "your_auth_key" 
+secure_auth_key: "your_secure_auth_key"
+logged_in_key: "your_logged_in_key"
+nonce_key: "your_nonce_key"
+auth_salt: "your_auth_salt"
+secure_auth_salt: "your_secure_auth_salt"
+logged_in_salt: "your_logged_in_salt"
+nonce_salt: "your_nonce_salt"

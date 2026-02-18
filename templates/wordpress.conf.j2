@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+    DocumentRoot {{ wp_dir }}
+    <Directory {{ wp_dir }}>
+        Options FollowSymLinks
+        AllowOverride Limit Options FileInfo
+        DirectoryIndex index.php
+        Require all granted
+    </Directory>
+    <Directory {{ wp_dir }}/wp-content>
+        Options FollowSymLinks
+        Require all granted
+    </Directory>
+</VirtualHost>

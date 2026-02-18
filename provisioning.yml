@@ -1,0 +1,113 @@
+---
+- hosts: all
+  handlers:
+    - name: restart apache
+      service:
+        name: apache2
+        state: restarted
+      become: yes
+
+  tasks:
+    - name: Install dependencies
+      ansible.builtin.apt:
+        pkg:
+        - apache2
+        - ghostscript
+        - libapache2-mod-php
+        - mysql-server
+        - php
+        - php-bcmath
+        - php-curl
+        - php-imagick
+        - php-intl
+        - php-json
+        - php-mbstring
+        - php-mysql
+        - php-xml
+        - php-zip
+        - python3-pymysql
+        state: latest
+        update_cache: yes
+      become: yes
+      become_method: sudo
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /srv/www
+        state: directory
+        owner: www-data
+        group: www-data
+      become: yes
+      become_method: sudo
+
+    - name: Unarchive a file that needs to be downloaded
+      ansible.builtin.unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /srv/www
+        remote_src: yes
+      become: yes
+      become_method: sudo
+
+    - name: Copy file wordpress.conf
+      ansible.builtin.template:
+        src: templates/wordpress.conf.j2
+        dest: /etc/apache2/sites-available/wordpress.conf
+      become: yes
+
+    - name: Execute the command in remote shell
+      ansible.builtin.shell: a2ensite wordpress; a2enmod rewrite; a2dissite 000-default
+      become: yes
+      notify:
+        restart apache
+
+    - name: Create a new database with name 'wordpress_db'
+      community.mysql.mysql_db:
+        name: '{{ wp_db_name }}'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+      become: yes
+
+    - name: Create database user and password with some database privileges
+      community.mysql.mysql_user:
+        name: '{{ wp_db_user }}'
+        password: '{{ wp_db_pass }}'
+        priv: '{{ wp_db_name }}.*:SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER'
+        state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+      become: yes
+
+    - name: Copy file wp-config.php
+      ansible.builtin.copy:
+        src: '{{ wp_dir }}/wp-config-sample.php'
+        dest: '{{ wp_dir }}/wp-config.php'
+        force: no
+        remote_src: yes
+      become: yes
+
+    - name: Configure wp-config with database
+      ansible.builtin.replace:
+        path: '{{ wp_dir }}/wp-config.php'
+        regexp: '{{ item.regexp }}'
+        replace: '{{ item.replace }}'
+      with_items:
+      - { regexp: 'database_name_here', replace: '{{ wp_db_name }}' }
+      - { regexp: 'username_here', replace: '{{ wp_db_user }}' }
+      - { regexp: 'password_here', replace: '{{ wp_db_pass }}' }
+      become: yes
+
+    - name: Replace a localhost entry searching for a literal string to avoid escaping
+      ansible.builtin.lineinfile:
+        path: '{{ wp_dir }}/wp-config.php'
+        search_string: '{{ item.search_string }}'
+        line: '{{ item.line }}'
+      with_items:
+      - { search_string: "define( 'AUTH_KEY',         'put your unique phrase here' );",         line: "define('AUTH_KEY',         '{{ auth_key }}');" }
+      - { search_string: "define( 'SECURE_AUTH_KEY',  'put your unique phrase here' );",         line: "define('SECURE_AUTH_KEY',  '{{ secure_auth_key }}');" }
+      - { search_string: "define( 'LOGGED_IN_KEY',    'put your unique phrase here' );",         line: "define('LOGGED_IN_KEY',    '{{ logged_in_key }}');" }
+      - { search_string: "define( 'NONCE_KEY',        'put your unique phrase here' );",         line: "define('NONCE_KEY',        '{{ nonce_key }}');" }
+      - { search_string: "define( 'AUTH_SALT',        'put your unique phrase here' );",         line: "define('AUTH_SALT',        '{{ auth_salt }}');" }
+      - { search_string: "define( 'SECURE_AUTH_SALT', 'put your unique phrase here' );",         line: "define('SECURE_AUTH_SALT', '{{ secure_auth_salt }}');" }
+      - { search_string: "define( 'LOGGED_IN_SALT',   'put your unique phrase here' );",         line: "define('LOGGED_IN_SALT',   '{{ logged_in_salt }}');" }
+      - { search_string: "define( 'NONCE_SALT',       'put your unique phrase here' );",         line: "define('NONCE_SALT',       '{{ nonce_salt }}');" }
+      become: yes
+      
