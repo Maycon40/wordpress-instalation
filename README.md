@@ -87,7 +87,7 @@ Exemplo:
 
 ## 🔐 Requisitos
 
-Instalar o ansible:
+Instalar o ansible (Debian):
 
 ```shell
 sudo apt install ansible
